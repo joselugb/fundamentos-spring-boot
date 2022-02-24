@@ -9,9 +9,10 @@ import com.fundamentos.platzi.fundamentos.bean.MyBean;
 import com.fundamentos.platzi.fundamentos.bean.MyBeanWithDependecy;
 import com.fundamentos.platzi.fundamentos.bean.MyBeanWithProperties;
 import com.fundamentos.platzi.fundamentos.component.ComponentDependency;
+import com.fundamentos.platzi.fundamentos.entity.User;
 import com.fundamentos.platzi.fundamentos.pojo.UserPojo;
 import com.fundamentos.platzi.fundamentos.repository.UserRepository;
-import org.apache.catalina.User;
+import com.fundamentos.platzi.fundamentos.service.UserService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,6 +21,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.domain.Sort;
 
+import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -34,19 +36,22 @@ public class FundamentosApplication implements CommandLineRunner {
 	private MyBeanWithProperties myBeanWithProperties;
 	private UserPojo userPojo;
 	private UserRepository userRepository;
+    private UserService userService;
 
 	public FundamentosApplication(@Qualifier("componentTwoImplement") ComponentDependency componentDependency,
 								  MyBean myBean,
 								  MyBeanWithDependecy myBeanWithDependecy,
 								  MyBeanWithProperties myBeanWithProperties,
 								  UserPojo userPojo,
-								  UserRepository userRepository){
+								  UserRepository userRepository,
+                                  UserService userService){
 		this.componentDependency = componentDependency;
 		this.myBean = myBean;
         this.myBeanWithDependecy = myBeanWithDependecy;
 		this.myBeanWithProperties = myBeanWithProperties;
 		this.userPojo = userPojo;
 		this.userRepository = userRepository;
+        this.userService = userService;
 	}
 
 	public static void main(String[] args) {
@@ -57,9 +62,28 @@ public class FundamentosApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 		//ejemplosAnteriores();
 		saveUsersInDataBase();
+		saveUsersInDataBase();
 		getInformationJpqlFromUser();
 
 	}
+    private void saveWithErrorTransactional(){
+        User test1 = new User("TestTransactional1","testTransactional1@domail.com",LocalDate.of(2022,02,23));
+        User test2 = new User("TestTransactional2","testTransactional2@domail.com",LocalDate.of(2022,02,23));
+        User test3 = new User("TestTransactional3","testTransactional1@domail.com",LocalDate.of(2022,02,23));
+        User test4 = new User("TestTransactional4","testTransactional4@domail.com",LocalDate.of(2022,02,23));
+        User test5 = new User("TestTransactional5","testTransactional5@domail.com",LocalDate.of(2022,02,23));
+
+        List<User> users = Arrays.asList(test1, test2, test3, test4, test5);
+		try{
+			userService.saveTransactional(users);
+		}catch (Exception e){
+			LOGGER.error("Esta es la exceciop dentro de transanccional " + e);
+		}
+
+		userService.getAllUsers().stream()
+				.forEach(user ->
+						LOGGER.info("Este es el usuario dentro del metodo transaccional " + user));
+    }
 	private void getInformationJpqlFromUser(){
 		LOGGER.info("\n Usuario con el metodo findByUserEmail: " +
 				userRepository.findByUserMail("jose@gmail.com")
